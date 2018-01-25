@@ -1,11 +1,7 @@
 library(shiny)
-Trim <- function( x ) {
-  # http://stackoverflow.com/questions/2261079/how-to-trim-leading-and-trailing-whitespace-in-r
-  gsub("(^[[:space:]]+|[[:space:]]+$)", "", x)
-}
 
 # load ngram data set
-all_ngrams <- readRDS("C:\\Users\\Kyra Hull\\Documents\\R\\Capstone\\final\\total_ngram.rds")
+all_ngrams <- readRDS("total_ngram.rds")
 
 
 # Define server logic required to summarize and view the selected dataset
@@ -20,13 +16,13 @@ shinyServer(function(input, output) {
   output$value <- renderPrint({ paste(tolower(input$text), find_next_word(tolower(input$text))) })
   
   find_next_word <- function(current_sentence) { 
-    if (nchar(Trim(current_sentence)) == 0)
+    if (nchar(trimws(current_sentence)) == 0)
       return ('')
     
     # find the best next word
     # trailing space at end to avoid picking last word
     matches <- c()
-    current_sentence <- paste0(Trim(current_sentence)," ")
+    current_sentence <- paste0(trimws(current_sentence)," ")
     for (sentence in all_ngrams) {
       # find exact match with double backslash and escape
       if (grepl(paste0('\\<',current_sentence), sentence)) {
