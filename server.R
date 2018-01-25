@@ -3,6 +3,41 @@ library(shiny)
 # load ngram data set
 all_ngrams <- readRDS("total_ngram.rds")
 
+find_next_word <- function(current_sentence) { 
+  if (nchar(trimws(current_sentence)) == 0)
+    return ('')
+  
+  # find the best next word
+  # trailing space at end to avoid picking last word
+  matches <- c()
+  current_sentence <- paste0(trimws(current_sentence)," ")
+  for (sentence in all_ngrams) {
+    # find exact match with double backslash and escape
+    if (grepl(paste0('\\<',current_sentence), sentence)) {
+      matches <- c(matches, sentence)
+    }
+  }
+  
+  # didn't find a match so return nothing
+  if (is.null(matches))
+    return ('')
+  
+  # find highest probability word
+  precision_match <- c()
+  for (a_match in matches) {
+    # how many spaces in from of search word
+    precision_match <- c(precision_match,nchar(strsplit(x = a_match, split = current_sentence)[[1]][[1]]))
+  }
+  
+  # use highest number and a random of highest for multiples
+  best_matched_sentence <- sample(matches[precision_match == max(precision_match)],size = 1)
+  # split the best matching sentence by the search word
+  best_match <- strsplit(x = best_matched_sentence, split = current_sentence)[[1]]
+  # split second part by spaces and pick first word
+  best_match <-  strsplit(x = best_match[[2]], split = " ")[[1]]
+  # return first word
+  return (best_match[[1]]) 
+}
 
 # Define server logic required to summarize and view the selected dataset
 shinyServer(function(input, output) {
@@ -13,41 +48,9 @@ shinyServer(function(input, output) {
   })
   
   # You can access the value of the widget with input$text, e.g.
-  output$value <- renderPrint({ paste(tolower(input$text), find_next_word(tolower(input$text))) })
+  output$value <- renderPrint({ 
+    paste(tolower(input$text), find_next_word(tolower(input$text)))
+    })
   
-  find_next_word <- function(current_sentence) { 
-    if (nchar(trimws(current_sentence)) == 0)
-      return ('')
-    
-    # find the best next word
-    # trailing space at end to avoid picking last word
-    matches <- c()
-    current_sentence <- paste0(trimws(current_sentence)," ")
-    for (sentence in all_ngrams) {
-      # find exact match with double backslash and escape
-      if (grepl(paste0('\\<',current_sentence), sentence)) {
-        matches <- c(matches, sentence)
-      }
-    }
-    
-    # didn't find a match so return nothing
-    if (is.null(matches))
-      return ('')
-    
-    # find highest probability word
-    precision_match <- c()
-    for (a_match in matches) {
-      # how many spaces in from of search word
-      precision_match <- c(precision_match,nchar(strsplit(x = a_match, split = current_sentence)[[1]][[1]]))
-    }
-    
-    # use highest number and a random of highest for multiples
-    best_matched_sentence <- sample(matches[precision_match == max(precision_match)],size = 1)
-    # split the best matching sentence by the search word
-    best_match <- strsplit(x = best_matched_sentence, split = current_sentence)[[1]]
-    # split second part by spaces and pick first word
-    best_match <-  strsplit(x = best_match[[2]], split = " ")[[1]]
-    # return first word
-    return (best_match[[1]]) 
-  }
+
 })
