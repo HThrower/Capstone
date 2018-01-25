@@ -49,7 +49,8 @@ shinyServer(function(input, output) {
   
   # You can access the value of the widget with input$text, e.g.
   output$value <- renderPrint({ 
-    paste(tolower(input$text), find_next_word(tolower(input$text)))
+    txt = tolower(input$text)
+    paste(txt, find_next_word(txt))
     })
   
 
