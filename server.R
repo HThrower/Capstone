@@ -3,41 +3,49 @@ library(dplyr)
 library(stringr)
 
 # load ngram data set
-all_ngrams <- readRDS("total_ngram.rds")
+# all_ngrams <- readRDS("total_ngram.rds")
+all_ngrams <- readRDS("best_ngram.rds")
 
 
 find_next_word <- function(current_sentence) { 
-  if (nchar(trimws(current_sentence)) == 0) {
+  current_sentence = gsub("\\s\\s", " ", current_sentence)
+  current_sentence = trimws(current_sentence)
+  if (nchar(current_sentence) == 0) {
     return('')
   }
   
   # find the best next word
   # trailing space at end to avoid picking last word
-  matches <- c()
-  current_sentence <- paste0(trimws(current_sentence)," ")
+  # current_sentence <- paste0(trimws(current_sentence)," ")
+  # matches = all_ngrams %>% 
+  #   filter(str_detect(sentence, paste0("^", current_sentence))) 
+  
   matches = all_ngrams %>% 
-    filter(str_detect(sentence, paste0("^", current_sentence))) 
+    filter(predictor == current_sentence)
   if (nrow(matches) == 0) {
     return("")
   }
-  
-  matches = matches %>% 
-    arrange(order, desc(n))
-  
+
   # find highest probability word - ties will give both
-  matches = matches %>% 
-    filter(order == min(order),
-           n == max(n))
+  # matches = matches %>% 
+  #   arrange(order, desc(n))
+  # matches = matches %>% 
+  #   filter(order == min(order),
+  #          n == max(n))
   
   matches = matches$sentence
   
   # didn't find a match so return nothing
   if (is.null(matches)) {
-    return ('')
+    return('')
   }
   
   # use highest number and a random of highest for multiples
-  best_matched_sentence <- sample(matches, size = 1)
+  if (length(matches) > 1) {
+    best_matched_sentence <- sample(matches, size = 1)
+  } else {
+    best_matched_sentence = matches
+  }
   best_matched_sentence = sub(current_sentence, "", best_matched_sentence)
   best_matched_sentence = trimws(best_matched_sentence)
   # split the best matching sentence by the search word
