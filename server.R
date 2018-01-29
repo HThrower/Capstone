@@ -1,42 +1,52 @@
 library(shiny)
+library(dplyr)
+library(stringr)
 
 # load ngram data set
 all_ngrams <- readRDS("total_ngram.rds")
 
+
 find_next_word <- function(current_sentence) { 
-  if (nchar(trimws(current_sentence)) == 0)
-    return ('')
+  if (nchar(trimws(current_sentence)) == 0) {
+    return('')
+  }
   
   # find the best next word
   # trailing space at end to avoid picking last word
   matches <- c()
   current_sentence <- paste0(trimws(current_sentence)," ")
-  for (sentence in all_ngrams) {
-    # find exact match with double backslash and escape
-    if (grepl(paste0('\\<',current_sentence), sentence)) {
-      matches <- c(matches, sentence)
-    }
+  matches = all_ngrams %>% 
+    filter(str_detect(sentence, paste0("^", current_sentence))) 
+  if (nrow(matches) == 0) {
+    return("")
   }
   
-  # didn't find a match so return nothing
-  if (is.null(matches))
-    return ('')
+  matches = matches %>% 
+    arrange(order, desc(n))
   
-  # find highest probability word
-  precision_match <- c()
-  for (a_match in matches) {
-    # how many spaces in from of search word
-    precision_match <- c(precision_match,nchar(strsplit(x = a_match, split = current_sentence)[[1]][[1]]))
+  # find highest probability word - ties will give both
+  matches = matches %>% 
+    filter(order == min(order),
+           n == max(n))
+  
+  matches = matches$sentence
+  
+  # didn't find a match so return nothing
+  if (is.null(matches)) {
+    return ('')
   }
   
   # use highest number and a random of highest for multiples
-  best_matched_sentence <- sample(matches[precision_match == max(precision_match)],size = 1)
+  best_matched_sentence <- sample(matches, size = 1)
+  best_matched_sentence = sub(current_sentence, "", best_matched_sentence)
+  best_matched_sentence = trimws(best_matched_sentence)
   # split the best matching sentence by the search word
-  best_match <- strsplit(x = best_matched_sentence, split = current_sentence)[[1]]
-  # split second part by spaces and pick first word
-  best_match <-  strsplit(x = best_match[[2]], split = " ")[[1]]
+  # best_match <- strsplit(x = best_matched_sentence, split = current_sentence)[[1]]
+  # # split second part by spaces and pick first word
+  # best_match <-  strsplit(x = best_match[[2]], split = " ")[[1]]
   # return first word
-  return (best_match[[1]]) 
+  return(best_matched_sentence)
+  # return (best_match[[1]]) 
 }
 
 # Define server logic required to summarize and view the selected dataset
