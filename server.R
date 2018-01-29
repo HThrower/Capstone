@@ -15,6 +15,6 @@ shinyServer(function(input, output) {
   output$value <- renderPrint({ 
     txt = tolower(input$text)
     find_next_word(txt)
-    })
+  })
 
 })
